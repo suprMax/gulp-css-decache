@@ -1,0 +1,19 @@
+html {
+  background: url("/plainDoge-700x525.jpg?decache=43be11133aa8b5c875b86ea64b5cfa34") no-repeat;
+}
+
+body {
+  background: url("/plainDoge-700x525.jpg?with=querystring&decache=43be11133aa8b5c875b86ea64b5cfa34");
+}
+
+h1 {
+  background: red url("plainDoge-700x525.jpg?decache=43be11133aa8b5c875b86ea64b5cfa34#ololohash") 0 0 no-repeat;
+}
+
+span {
+  background: url("plainDoge-700x525.jpg?tough=cookie&decache=43be11133aa8b5c875b86ea64b5cfa34#ololohash");
+}
+
+p {
+  background: url("doesntexist.jpg");
+}

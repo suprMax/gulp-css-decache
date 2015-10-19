@@ -1,0 +1,19 @@
+html {
+  background: url('/plainDoge-700x525.jpg') no-repeat;
+}
+
+body {
+  background: url(/plainDoge-700x525.jpg?with=querystring);
+}
+
+h1 {
+  background: red url("plainDoge-700x525.jpg#ololohash") 0 0 no-repeat;
+}
+
+span {
+  background: url("plainDoge-700x525.jpg?tough=cookie#ololohash");
+}
+
+p {
+  background: url("doesntexist.jpg");
+}
