@@ -1,9 +1,12 @@
 'use strict';
 var _ = require('lodash');
 var gutil = require('gulp-util');
-var through = require('through2');
-var md5File = require('md5-file');
+
+var through2 = require('through2');
+
 var fs = require('fs');
+var md5File = require('md5-file');
+
 
 const PLUGIN_NAME = 'gulp-css-decache';
 const REGEX = 'url\\s*\\(["\']?([a-zA-Z0-9\\/\\.\\?=\\-_#@]+)["\']?\\)';
@@ -42,7 +45,7 @@ var getReplacement = function(statement, opts) {
     var matches = statement.match(new RegExp(REGEX)),
         url = matches[1],
 
-        prefix = url.indexOf('?') >= 0 ? '&' : '?',
+        prefix = url.indexOf('?') === -1 ? '?' : '&',
         buster = getBuster(url, opts),
         insert = opts.name + '=' + getBuster(url, opts),
 
@@ -50,12 +53,12 @@ var getReplacement = function(statement, opts) {
 
     if (!buster) return null;
 
-    if (url.indexOf('#') >= 0) {
-      var urlParts = url.split('#');
-      replacement = urlParts[0] + prefix + insert + '#' + urlParts[1];
+    if (url.indexOf('#') === -1) {
+      replacement = url + prefix + insert;
     }
     else {
-      replacement = url + prefix + insert;
+      var urlParts = url.split('#');
+      replacement = urlParts[0] + prefix + insert + '#' + urlParts[1];
     }
 
   return 'url("' + replacement + '")';
@@ -67,11 +70,11 @@ var decacheFile = function(source, opts) {
 
   if (!matches) return source;
 
-  for (var i = 0, _i = matches.length; i < _i; i++) {
-    replacement = getReplacement(matches[i], opts);
+  matches.forEach(function(match){
+    replacement = getReplacement(match, opts);
     // Sometimes there is no replacement, like MD5 mode is on and file is not located on the disk.
-    if (replacement) source = source.replace(matches[i], replacement);
-  }
+    if (replacement) source = source.replace(match, replacement);
+  })
 
   return source;
 };
@@ -83,14 +86,14 @@ module.exports = function (opts) {
     base: null
   });
 
-  return through.obj(function (file, enc, cb) {
+  return through2.obj(function (file, enc, next) {
     if (file.isNull()) {
-      cb(null, file);
+      next(null, file);
       return;
     }
 
     if (file.isStream()) {
-      cb(new gutil.PluginError(PLUGIN_NAME, 'Streaming not supported'));
+      next(new gutil.PluginError(PLUGIN_NAME, 'Streaming not supported'));
       return;
     }
 
@@ -101,6 +104,6 @@ module.exports = function (opts) {
       this.emit('error', new gutil.PluginError(PLUGIN_NAME, err, { fileName: file.path }));
     }
 
-    cb();
+    next();
   });
 };
