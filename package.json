@@ -1,6 +1,6 @@
 {
   "name": "gulp-css-decache",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Finds all url() statements in your CSS files and adds cachebusting parameters to them.",
   "dependencies": {
     "through2": "2.0.0",
