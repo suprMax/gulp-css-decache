@@ -3,22 +3,33 @@ var _ = require('lodash');
 var gutil = require('gulp-util');
 
 var through2 = require('through2');
+var md5File = require('md5-file');
 
 var fs = require('fs');
 var path = require('path');
-var md5File = require('md5-file');
 
+var querystring = require('querystring');
+var url = require('url');
 
 const PLUGIN_NAME = 'gulp-css-decache';
 const REGEX = 'url\\s*\\(["\']?([a-zA-Z0-9\\/\\.\\?=\\-_#@]+)["\']?\\)';
 const NOW = Date.now();
 
-var getBuster = function(url, opts) {
-  var file, stats;
 
-  file = url.split('?')[0].split('#')[0];
+var getBuster = function(urlPath, opts) {
+  var parsed = url.parse(urlPath),
+      file = parsed.pathname,
+      query = parsed.query ? querystring.parse(parsed.query) : {},
+      stats;
+
+  if (query[opts.name]) return null; // already processed
 
   if (opts.base) {
+    if (!file) {
+      if (opts.logMissing) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
+      return null;
+    }
+
     file = path.join(opts.base + '/', file);
 
     try {
