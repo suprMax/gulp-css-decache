@@ -25,7 +25,7 @@ var getBuster = function(url, opts) {
       stats = fs.statSync(file);
     }
     catch (e) {
-      gutil.log('File not found', gutil.colors.magenta(file));
+      if (opts.logMissing) gutil.log('File not found', gutil.colors.red(file));
       return null;
     }
 
@@ -84,7 +84,8 @@ module.exports = function (opts) {
   opts = _.defaults(opts || {}, {
     name: 'decache',
     md5: false,
-    base: null
+    base: null,
+    logMissing: false
   });
 
   return through2.obj(function (file, enc, next) {
