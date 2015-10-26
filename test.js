@@ -7,7 +7,6 @@ it('should decache url()', function (cb) {
   var stream = decache();
 
   stream.on('data', function (file) {
-    console.warn(file.contents.toString())
     assert(/\?decache=\d+/.test(file.contents.toString()));
     cb();
   });

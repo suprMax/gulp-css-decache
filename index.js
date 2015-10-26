@@ -5,6 +5,7 @@ var gutil = require('gulp-util');
 var through2 = require('through2');
 
 var fs = require('fs');
+var path = require('path');
 var md5File = require('md5-file');
 
 
@@ -16,15 +17,15 @@ var getBuster = function(url, opts) {
   var file, stats;
 
   file = url.split('?')[0].split('#')[0];
-  if (file.charAt(0) === '/') file = file.substr(1);
 
   if (opts.base) {
-    file = opts.base + file;
+    file = path.join(opts.base + '/', file);
 
     try {
       stats = fs.statSync(file);
     }
     catch (e) {
+      gutil.log('File not found', gutil.colors.magenta(file));
       return null;
     }
 
@@ -42,24 +43,24 @@ var getBuster = function(url, opts) {
 };
 
 var getReplacement = function(statement, opts) {
-    var matches = statement.match(new RegExp(REGEX)),
-        url = matches[1],
+  var matches = statement.match(new RegExp(REGEX)),
+      url = matches[1],
 
-        prefix = url.indexOf('?') === -1 ? '?' : '&',
-        buster = getBuster(url, opts),
-        insert = opts.name + '=' + getBuster(url, opts),
+      prefix = url.indexOf('?') === -1 ? '?' : '&',
+      buster = getBuster(url, opts),
+      insert = opts.name + '=' + getBuster(url, opts),
 
-        replacement;
+      replacement;
 
-    if (!buster) return null;
+  if (!buster) return null;
 
-    if (url.indexOf('#') === -1) {
-      replacement = url + prefix + insert;
-    }
-    else {
-      var urlParts = url.split('#');
-      replacement = urlParts[0] + prefix + insert + '#' + urlParts[1];
-    }
+  if (url.indexOf('#') === -1) {
+    replacement = url + prefix + insert;
+  }
+  else {
+    var urlParts = url.split('#');
+    replacement = urlParts[0] + prefix + insert + '#' + urlParts[1];
+  }
 
   return 'url("' + replacement + '")';
 };
@@ -74,7 +75,7 @@ var decacheFile = function(source, opts) {
     replacement = getReplacement(match, opts);
     // Sometimes there is no replacement, like MD5 mode is on and file is not located on the disk.
     if (replacement) source = source.replace(match, replacement);
-  })
+  });
 
   return source;
 };
@@ -107,3 +108,4 @@ module.exports = function (opts) {
     next();
   });
 };
+
