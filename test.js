@@ -4,10 +4,10 @@ var gutil = require('gulp-util');
 var decache = require('./');
 
 it('should decache url()', function (cb) {
-  var stream = decache();
+  var stream = decache({ value: '0.0.1' });
 
   stream.on('data', function (file) {
-    assert(/\?decache=\d+/.test(file.contents.toString()));
+    assert(/\?decache=0\.0\.1/.test(file.contents.toString('utf8')));
     cb();
   });
 

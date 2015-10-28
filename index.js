@@ -13,10 +13,12 @@ var url = require('url');
 
 const PLUGIN_NAME = 'gulp-css-decache';
 const REGEX = 'url\\s*\\(["\']?([a-zA-Z0-9\\/\\.\\?=\\-_#@]+)["\']?\\)';
-const NOW = Date.now();
+const ENCODING = 'utf8';
 
 
 var getBuster = function(urlPath, opts) {
+  if (opts.value) return opts.value;
+
   var parsed = url.parse(urlPath),
       file = parsed.pathname,
       query = parsed.query ? querystring.parse(parsed.query) : {},
@@ -24,33 +26,31 @@ var getBuster = function(urlPath, opts) {
 
   if (query[opts.name]) return null; // already processed
 
-  if (opts.base) {
-    if (!file) {
-      if (opts.logMissing) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
-      return null;
-    }
+  if (!file) {
+    if (opts.logMissing) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
+    return null;
+  }
 
-    file = path.join(opts.base + '/', file);
+  file = path.join(opts.base + '/', file);
 
-    try {
-      stats = fs.statSync(file);
-    }
-    catch (e) {
-      if (opts.logMissing) gutil.log('File not found', gutil.colors.red(file));
-      return null;
-    }
+  try {
+    stats = fs.statSync(file);
+  }
+  catch (e) {
+    if (opts.logMissing) gutil.log('File not found', gutil.colors.red(file));
+    return null;
+  }
 
-    if (stats) {
-      if (opts.md5 && !stats.isDirectory()) {
-        return md5File(file);
-      }
-      else {
-        return +(new Date(stats.mtime));
-      }
+  if (stats) {
+    if (opts.md5 && !stats.isDirectory()) {
+      return md5File(file);
+    }
+    else {
+      return +(new Date(stats.mtime));
     }
   }
 
-  return NOW;
+  return null;
 };
 
 var getReplacement = function(statement, opts) {
@@ -94,8 +94,9 @@ var decacheFile = function(source, opts) {
 module.exports = function (opts) {
   opts = _.defaults(opts || {}, {
     name: 'decache',
-    md5: false,
-    base: null,
+    value: null,
+    md5: true,
+    base: process.cwd(),
     logMissing: false
   });
 
@@ -111,7 +112,7 @@ module.exports = function (opts) {
     }
 
     try {
-      file.contents = new Buffer(decacheFile(file.contents.toString(), opts).toString());
+      file.contents = new Buffer(decacheFile(file.contents.toString(ENCODING), opts).toString(ENCODING));
       this.push(file);
     } catch (err) {
       this.emit('error', new gutil.PluginError(PLUGIN_NAME, err, { fileName: file.path }));
