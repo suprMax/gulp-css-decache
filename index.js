@@ -1,5 +1,4 @@
 'use strict';
-var _ = require('lodash');
 var gutil = require('gulp-util');
 
 var through2 = require('through2');
@@ -43,7 +42,7 @@ var getBuster = function(urlPath, opts) {
 
   if (stats) {
     if (opts.md5 && !stats.isDirectory()) {
-      return md5File(file);
+      return md5File.sync(file);
     }
     else {
       return +(new Date(stats.mtime));
@@ -59,7 +58,7 @@ var getReplacement = function(statement, opts) {
 
       prefix = url.indexOf('?') === -1 ? '?' : '&',
       buster = getBuster(url, opts),
-      insert = opts.name + '=' + getBuster(url, opts),
+      insert = opts.name + '=' + buster,
 
       replacement;
 
@@ -82,7 +81,7 @@ var decacheFile = function(source, opts) {
 
   if (!matches) return source;
 
-  matches.forEach(function(match){
+  matches.forEach(function(match) {
     replacement = getReplacement(match, opts);
     // Sometimes there is no replacement, like MD5 mode is on and file is not located on the disk.
     if (replacement) source = source.replace(match, replacement);
@@ -92,13 +91,15 @@ var decacheFile = function(source, opts) {
 };
 
 module.exports = function (opts) {
-  opts = _.defaults(opts || {}, {
+  var defaults = {
     name: 'decache',
     value: null,
     md5: true,
     base: process.cwd(),
     logMissing: false
-  });
+  };
+
+  opts = Object.assign(defaults, opts || {})
 
   return through2.obj(function (file, enc, next) {
     if (file.isNull()) {
@@ -121,4 +122,3 @@ module.exports = function (opts) {
     next();
   });
 };
-
