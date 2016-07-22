@@ -3,6 +3,9 @@
   "description": "An example that shows how to decache a file",
   "version": "0.0.0",
   "main": "gulpfile.js",
+  "scripts": {
+    "gulp": "gulp"
+  },
   "devDependencies": {
     "gulp": "^3.9.0"
   }
