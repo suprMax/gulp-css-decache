@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const querystring = require('querystring');
 
 const through2 = require('through2');
 const md5File = require('md5-file');
@@ -26,24 +25,21 @@ const getBuster = (urlPath, options) => {
   // Archaic VML standart that is still supported by some libraries
   // Format: https://msdn.microsoft.com/en-us/library/ee384217(v=vs.85).aspx
   // Some libraries: https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css#L99
-  if (urlPath.includes('VML')) return null;
+  if (urlPath.includes('#VML')) return null;
   if (options.value) return options.value;
 
   const { name, base, md5, logStrange, logMissing } = options;
-  const parsed = url.parse(urlPath);
-  const query = parsed.query ? querystring.parse(parsed.query || {}) : {};
+  const { query, pathname } = url.parse(urlPath);
 
-  let file = parsed.pathname;
-  let stats;
+  if (query && query.includes(`${name}=`)) return null; // already processed
 
-  if (query[name]) return null; // already processed
-
-  if (!file) {
+  if (!pathname) {
     if (logStrange) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
     return null;
   }
 
-  file = path.join(`${base}/`, file);
+  const file = path.join(`${base}/`, pathname);
+  let stats;
 
   try {
     stats = fs.statSync(file);
@@ -54,29 +50,28 @@ const getBuster = (urlPath, options) => {
 
   if (stats) {
     if (md5 && !stats.isDirectory()) return md5File.sync(file);
-    return +(new Date(stats.mtime));
+    return Number(new Date(stats.mtime));
   }
 
   return null;
 };
 
 const getReplacement = (statement, options) => {
-  const matches = statement.match(new RegExp(REGEX));
-  const fileUrl = matches[1];
+  const fileUrl = statement.match(new RegExp(REGEX))[1];
 
-  const prefix = fileUrl.indexOf('?') === -1 ? '?' : '&';
+  const prefix = fileUrl.includes('?') ? '&' : '?';
   const buster = getBuster(fileUrl, options);
   const insert = `${options.name}=${buster}`;
 
-  let replacement;
-
   if (!buster) return null;
 
-  if (fileUrl.indexOf('#') === -1) {
-    replacement = fileUrl + prefix + insert;
+  let replacement;
+
+  if (fileUrl.includes('#')) {
+    const [fragment, hash] = fileUrl.split('#');
+    replacement = `${fragment}${prefix}${insert}#${hash}`;
   } else {
-    const urlParts = fileUrl.split('#');
-    replacement = `${urlParts[0]}${prefix}${insert}#${urlParts[1]}`;
+    replacement = fileUrl + prefix + insert;
   }
 
   return `url("${replacement}")`;

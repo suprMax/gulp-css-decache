@@ -4,7 +4,7 @@ const gulp = require('gulp');
 
 gulp.task('decache', () => (
   gulp.src(['css/*.css'])
-    .pipe(decache({ base: './public/', md5: true }))
+    .pipe(decache({ base: './public/', logMissing: true }))
     .pipe(gulp.dest('./public'))
 ));
 
