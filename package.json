@@ -1,24 +1,18 @@
 {
   "name": "gulp-css-decache",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Finds all url() statements in your CSS files and adds cachebusting parameters to them.",
-  "dependencies": {
-    "through2": "2.0.1",
-    "md5-file": "3.1.1",
-    "gulp-util": "3.0.7"
-  },
-  "devDependencies": {
-    "mocha": "*"
-  },
-  "scripts": {
-    "test": "mocha"
-  },
+
   "repository": {
     "type": "git",
     "url": "git://github.com/suprMax/gulp-css-decache.git"
   },
   "keywords": [
     "gulpplugin",
+    "gulp",
+    "decache",
+    "hash",
+    "md5",
     "cache",
     "css"
   ],
@@ -27,7 +21,26 @@
   "bugs": {
     "url": "https://github.com/suprMax/gulp-css-decache/issues"
   },
+
   "engines": {
-    "node": ">=4.2"
+    "node": "^6.x.x"
+  },
+  "scripts": {
+    "test": "mocha",
+    "example": "cd examples/inplace; gulp"
+  },
+
+  "devDependencies": {
+    "mocha": "^3.1.2",
+    "gulp": "^3.9.1",
+    "eslint": "^3.10.2",
+    "eslint-config-airbnb-base": "^10.0.1",
+    "eslint-plugin-import": "^2.2.0"
+  },
+
+  "dependencies": {
+    "through2": "2.0.1",
+    "md5-file": "3.1.1",
+    "gulp-util": "3.0.7"
   }
 }

@@ -17,3 +17,8 @@ span {
 p {
   background: url("doesntexist.jpg");
 }
+
+/* For you, wonderful leaflet people, that keep on supporting IE9 and below. I salute you. */
+.lvml {
+	behavior: url(#default#VML);
+}

@@ -1,124 +1,128 @@
-'use strict';
-var gutil = require('gulp-util');
+const fs = require('fs');
+const path = require('path');
+const querystring = require('querystring');
 
-var through2 = require('through2');
-var md5File = require('md5-file');
+const through2 = require('through2');
+const md5File = require('md5-file');
+const url = require('url');
 
-var fs = require('fs');
-var path = require('path');
-
-var querystring = require('querystring');
-var url = require('url');
+const gutil = require('gulp-util');
 
 const PLUGIN_NAME = 'gulp-css-decache';
 const REGEX = 'url\\s*\\(["\']?([a-zA-Z0-9\\/\\.\\?=\\-_#@]+)["\']?\\)';
 const ENCODING = 'utf8';
 
+const DEFAULT_OPTIONS = {
+  name: 'decache',
+  value: null,
+  md5: true,
+  base: process.cwd(),
+  logMissing: false,
+  logStrange: true,
+};
 
-var getBuster = function(urlPath, opts) {
-  if (opts.value) return opts.value;
 
-  var parsed = url.parse(urlPath),
-      file = parsed.pathname,
-      query = parsed.query ? querystring.parse(parsed.query) : {},
-      stats;
+const getBuster = (urlPath, options) => {
+  // Archaic VML standart that is still supported by some libraries
+  // Format: https://msdn.microsoft.com/en-us/library/ee384217(v=vs.85).aspx
+  // Some libraries: https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css#L99
+  if (urlPath.includes('VML')) return null;
+  if (options.value) return options.value;
 
-  if (query[opts.name]) return null; // already processed
+  const { name, base, md5, logStrange, logMissing } = options;
+  const parsed = url.parse(urlPath);
+  const query = parsed.query ? querystring.parse(parsed.query || {}) : {};
+
+  let file = parsed.pathname;
+  let stats;
+
+  if (query[name]) return null; // already processed
 
   if (!file) {
-    if (opts.logMissing) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
+    if (logStrange) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
     return null;
   }
 
-  file = path.join(opts.base + '/', file);
+  file = path.join(`${base}/`, file);
 
   try {
     stats = fs.statSync(file);
-  }
-  catch (e) {
-    if (opts.logMissing) gutil.log('File not found', gutil.colors.red(file));
+  } catch (e) {
+    if (logMissing) gutil.log('File not found', gutil.colors.red(file));
     return null;
   }
 
   if (stats) {
-    if (opts.md5 && !stats.isDirectory()) {
-      return md5File.sync(file);
-    }
-    else {
-      return +(new Date(stats.mtime));
-    }
+    if (md5 && !stats.isDirectory()) return md5File.sync(file);
+    return +(new Date(stats.mtime));
   }
 
   return null;
 };
 
-var getReplacement = function(statement, opts) {
-  var matches = statement.match(new RegExp(REGEX)),
-      url = matches[1],
+const getReplacement = (statement, options) => {
+  const matches = statement.match(new RegExp(REGEX));
+  const fileUrl = matches[1];
 
-      prefix = url.indexOf('?') === -1 ? '?' : '&',
-      buster = getBuster(url, opts),
-      insert = opts.name + '=' + buster,
+  const prefix = fileUrl.indexOf('?') === -1 ? '?' : '&';
+  const buster = getBuster(fileUrl, options);
+  const insert = `${options.name}=${buster}`;
 
-      replacement;
+  let replacement;
 
   if (!buster) return null;
 
-  if (url.indexOf('#') === -1) {
-    replacement = url + prefix + insert;
-  }
-  else {
-    var urlParts = url.split('#');
-    replacement = urlParts[0] + prefix + insert + '#' + urlParts[1];
+  if (fileUrl.indexOf('#') === -1) {
+    replacement = fileUrl + prefix + insert;
+  } else {
+    const urlParts = fileUrl.split('#');
+    replacement = `${urlParts[0]}${prefix}${insert}#${urlParts[1]}`;
   }
 
-  return 'url("' + replacement + '")';
+  return `url("${replacement}")`;
 };
 
-var decacheFile = function(source, opts) {
-  var matches = source.match(new RegExp(REGEX, 'g')),
-      replacement;
-
+const decacheFile = (source, options) => {
+  const matches = source.match(new RegExp(REGEX, 'g'));
   if (!matches) return source;
 
-  matches.forEach(function(match) {
-    replacement = getReplacement(match, opts);
-    // Sometimes there is no replacement, like MD5 mode is on and file is not located on the disk.
+  matches.forEach((match) => {
+    const replacement = getReplacement(match, options);
+    // Sometimes there is no replacement, like MD5 mode is on and file is not on the disk.
     if (replacement) source = source.replace(match, replacement);
   });
 
   return source;
 };
 
-module.exports = function (opts) {
-  var defaults = {
-    name: 'decache',
-    value: null,
-    md5: true,
-    base: process.cwd(),
-    logMissing: false
-  };
+const getStreamReader = (userOptions) => {
+  const options = Object.assign(DEFAULT_OPTIONS, userOptions);
 
-  opts = Object.assign(defaults, opts || {})
-
-  return through2.obj(function (file, enc, next) {
-    if (file.isNull()) {
-      next(null, file);
+  const parseStream = function(chunk, encoding, callback) {
+    if (chunk.isNull()) {
+      callback(null, chunk);
       return;
     }
 
-    if (file.isStream()) {
-      next(new gutil.PluginError(PLUGIN_NAME, 'Streaming not supported'));
+    if (chunk.isStream()) {
+      callback(new gutil.PluginError(PLUGIN_NAME, 'Streaming not supported'));
       return;
     }
 
     try {
-      file.contents = new Buffer(decacheFile(file.contents.toString(ENCODING), opts).toString(ENCODING));
-      this.push(file);
-    } catch (err) {
-      this.emit('error', new gutil.PluginError(PLUGIN_NAME, err, { fileName: file.path }));
+      const processed = decacheFile(chunk.contents.toString(ENCODING), options);
+      chunk.contents = new Buffer(processed.toString(ENCODING));
+      this.push(chunk);
+    } catch (error) {
+      this.emit('error', new gutil.PluginError(PLUGIN_NAME, error, {
+        fileName: chunk.path,
+      }));
     }
 
-    next();
-  });
+    callback();
+  };
+
+  return through2.obj(parseStream);
 };
+
+module.exports = getStreamReader;

@@ -1,3 +1,5 @@
 examples/
 test.js
 .travis.yml
+.eslintignore
+.eslintrc
