@@ -1,5 +1,7 @@
 examples/
-test.js
-.travis.yml
 .eslintignore
 .eslintrc
+.gitignore
+.npmignore
+.travis.yml
+test.js

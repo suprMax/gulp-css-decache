@@ -1,11 +1,13 @@
 const gulp = require('gulp');
-/** REMOVE ME **/ const decache = require('../../');
-/** USE ME **/ // const decache = require('gulp-css-decache');
+// REMOVE THIS
+const gulpCssDecache = require('../../');
+// USE THIS
+// const decache = require('gulp-css-decache');
 
-gulp.task('decache', () => (
+const decache = () => (
   gulp.src(['css/*.css'])
-    .pipe(decache({ base: './public/', logMissing: true }))
+    .pipe(gulpCssDecache({ base: './public/', logMissing: true }))
     .pipe(gulp.dest('./public'))
-));
+);
 
-gulp.task('default', ['decache']);
+exports.default = decache;
