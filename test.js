@@ -1,5 +1,6 @@
 const assert = require('assert');
-const gutil = require('gulp-util');
+const Vinyl = require('vinyl');
+
 const decache = require('./');
 
 it('should decache url()', (done) => {
@@ -10,7 +11,7 @@ it('should decache url()', (done) => {
     done();
   });
 
-  stream.write(new gutil.File({
-    contents: new Buffer('body { background: url("fantastic_Image@2x.jpg"); }'),
+  stream.write(new Vinyl({
+    contents: Buffer.from('body { background: url("fantastic_Image@2x.jpg"); }'),
   }));
 });

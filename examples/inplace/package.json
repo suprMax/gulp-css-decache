@@ -7,6 +7,6 @@
     "gulp": "gulp"
   },
   "devDependencies": {
-    "gulp": "^3.9.0"
+    "gulp": "^4.0.2"
   }
 }
