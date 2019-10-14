@@ -5,7 +5,9 @@ const through2 = require('through2');
 const md5File = require('md5-file');
 const url = require('url');
 
-const gutil = require('gulp-util');
+const colors = require('ansi-colors');
+const PluginError = require('plugin-error');
+const log = require('fancy-log');
 
 const PLUGIN_NAME = 'gulp-css-decache';
 const REGEX = 'url\\s*\\(["\']?([a-zA-Z0-9\\/\\.\\?=\\-_#@]+)["\']?\\)';
@@ -34,7 +36,7 @@ const getBuster = (urlPath, options) => {
   if (query && query.includes(`${name}=`)) return null; // already processed
 
   if (!pathname) {
-    if (logStrange) gutil.log('Strange declaration encountered', gutil.colors.red(urlPath));
+    if (logStrange) log('Strange declaration encountered', colors.red(urlPath));
     return null;
   }
 
@@ -44,7 +46,7 @@ const getBuster = (urlPath, options) => {
   try {
     stats = fs.statSync(file);
   } catch (e) {
-    if (logMissing) gutil.log('File not found', gutil.colors.red(file));
+    if (logMissing) log('File not found', colors.red(file));
     return null;
   }
 
@@ -81,17 +83,16 @@ const decacheFile = (source, options) => {
   const matches = source.match(new RegExp(REGEX, 'g'));
   if (!matches) return source;
 
-  matches.forEach((match) => {
+  return matches.reduce((result, match) => {
     const replacement = getReplacement(match, options);
     // Sometimes there is no replacement, like MD5 mode is on and file is not on the disk.
-    if (replacement) source = source.replace(match, replacement);
-  });
-
-  return source;
+    if (replacement) return result.replace(match, replacement);
+    return result;
+  }, source);
 };
 
 const getStreamReader = (userOptions) => {
-  const options = Object.assign(DEFAULT_OPTIONS, userOptions);
+  const options = { ...DEFAULT_OPTIONS, ...userOptions };
 
   const parseStream = function(chunk, encoding, callback) {
     if (chunk.isNull()) {
@@ -100,16 +101,16 @@ const getStreamReader = (userOptions) => {
     }
 
     if (chunk.isStream()) {
-      callback(new gutil.PluginError(PLUGIN_NAME, 'Streaming not supported'));
+      callback(new PluginError(PLUGIN_NAME, 'Streaming not supported'));
       return;
     }
 
     try {
       const processed = decacheFile(chunk.contents.toString(ENCODING), options);
-      chunk.contents = new Buffer(processed.toString(ENCODING));
+      chunk.contents = Buffer.from(processed.toString(ENCODING));
       this.push(chunk);
     } catch (error) {
-      this.emit('error', new gutil.PluginError(PLUGIN_NAME, error, {
+      this.emit('error', new PluginError(PLUGIN_NAME, error, {
         fileName: chunk.path,
       }));
     }

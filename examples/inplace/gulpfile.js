@@ -1,6 +1,8 @@
 const gulp = require('gulp');
-/** REMOVE ME **/ const decache = require('../../');
-/** USE ME **/ // const decache = require('gulp-css-decache');
+// REMOVE THIS
+const decache = require('../../');
+// USE THIS
+// const decache = require('gulp-css-decache');
 
 gulp.task('decache', () => (
   gulp.src(['css/*.css'])
