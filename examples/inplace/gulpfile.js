@@ -6,7 +6,7 @@ const gulpCssDecache = require('../../');
 
 const decache = () => (
   gulp.src(['css/*.css'])
-    .pipe(gulpCssDecache({ base: './public/', logMissing: true }))
+    .pipe(gulpCssDecache({ base: './public/', logMissing: true, ignore: [/^skipped/] }))
     .pipe(gulp.dest('./public'))
 );
 

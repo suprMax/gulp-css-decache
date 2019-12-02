@@ -15,3 +15,16 @@ it('should decache url()', (done) => {
     contents: Buffer.from('body { background: url("fantastic_Image@2x.jpg"); }'),
   }));
 });
+
+it('should ignore decache url()', (done) => {
+  const stream = decache({ ignore: [/^fantastic_/] });
+
+  stream.on('data', (file) => {
+    assert(/"fantastic_Image@2x.jpg"/.test(file.contents.toString('utf8')));
+    done();
+  });
+
+  stream.write(new Vinyl({
+    contents: Buffer.from('body { background: url("fantastic_Image@2x.jpg"); }'),
+  }));
+});

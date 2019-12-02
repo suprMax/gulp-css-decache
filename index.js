@@ -20,14 +20,22 @@ const DEFAULT_OPTIONS = {
   base: process.cwd(),
   logMissing: false,
   logStrange: true,
+  ignore: null,
 };
 
+const isIgnored = (urlPath, options) => {
+  if (!Array.isArray(options.ignore)) return false;
+  return options.ignore.some((regex) => regex.test(urlPath));
+};
 
 const getBuster = (urlPath, options) => {
   // Archaic VML standart that is still supported by some libraries
   // Format: https://msdn.microsoft.com/en-us/library/ee384217(v=vs.85).aspx
   // Some libraries: https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css#L99
   if (urlPath.includes('#VML')) return null;
+
+  // Allow to skip some urls because they are symlinked or intentionally not decached
+  if (isIgnored(urlPath, options)) return null;
   if (options.value) return options.value;
 
   const { name, base, md5, logStrange, logMissing } = options;

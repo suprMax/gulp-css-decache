@@ -18,7 +18,7 @@ var decache = require('gulp-css-decache');
 
 gulp.task('decache', function() {
   return gulp.src(['css/*.css'])
-    .pipe(decache({ base : './public/', md5: true }))
+    .pipe(decache({ base : './public/', md5: true, ignore: [/regexToMatchURIsToSkip/] }))
     .pipe(gulp.dest('./public'));
 });
 ```

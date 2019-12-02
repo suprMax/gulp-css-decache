@@ -18,6 +18,10 @@ p {
   background: url("doesntexist.jpg");
 }
 
+aside {
+  background: url("skipped.jpg");
+}
+
 .processed {
   background: url('/plainDoge-700x525.jpg?decache=done') no-repeat;
 }
